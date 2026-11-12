@@ -542,4 +542,4 @@ def extract_treatment_items(text: str, llm_client=None) -> List[Dict]:
 
 ---
 
-*文档版本: v1.0 | 创建日期: 2026-04-02*
+*文档版本: v0.1 | 创建日期: 2026-04-02*

@@ -28,11 +28,20 @@
 | `model_test.sh` | 本地模型部署与测试脚本 (vLLM + LoRA) |
 | `rag.py` | 独立 RAG CLI 工具 |
 
+### 演示与 Swift 接入
+
+| 脚本 | 说明 |
+|------|------|
+| `cli.py` | 命令行入口（run / batch / serve / build-swift-data） |
+| `swift_plugin.py` | ms-swift 外部插件：注册 MedAgent 环境与 5 路奖励 |
+| `build_swift_dataset.py` | 把病例 JSONL 转成 swift 数据集（gym / prompt 两种模式） |
+| `train_swift.sh` | `swift rlhf` GRPO 启动脚本（env-only / hybrid 两套权重） |
+
 ### 数据处理
 
 | 脚本 | 说明 |
 |------|------|
-| `data_pipeline.py` | 数据合成管线 (4 阶段) |
+| `data_pipeline.py` | 数据合成管线 (fast / quality) |
 | `split_dataset.py` | 数据集划分脚本 |
 
 ### 辅助脚本
@@ -180,22 +189,49 @@ bash scripts/setup_conda_env.sh
 
 ### 5. 数据合成管线 (`data_pipeline.py`)
 
-**功能**: 从种子数据生成高质量医疗病例。
+**功能**: 从种子病例生成可用于评测/训练的 `MedicalCase`。
 
 ```bash
+# 质量模式（Generate -> Review -> Rewrite -> Judge，4 次调用/样本）
 python scripts/data_pipeline.py \
-    --mode standard \
-    --seed-data data/seed_cases/ \
-    --output data/synthetic_cases.jsonl
+    --seed-data data/seed_cases \
+    --output output/synthesis/cases.jsonl
+
+# 快速模式（Generate -> Judge，2 次调用/样本）
+python scripts/data_pipeline.py --mode fast --max-samples 200
+
+# 三个裁判投票（3/3 通过）
+python scripts/data_pipeline.py \
+    --judge qwen3.5-plus@https://coding.dashscope.aliyuncs.com/v1@DASHSCOPE_API_KEY_CP \
+    --judge glm-5@https://open.bigmodel.cn/api/paas/v4/@GLM_API_KEY \
+    --judge baichuan-m2@http://localhost:8200/v1@BAICHUAN_API_KEY
+
+# 无 API Key 时验证管线
+python scripts/data_pipeline.py --dry-run --max-samples 20
 ```
 
-**管线模式**:
+**参数说明**:
 
-| 模式 | 说明 | LLM 调用次数/样本 |
-|------|------|------------------|
-| `standard` | 标准 4 阶段管线 | 6 |
-| `one_shot` | One-shot 低成本管线 | 1 |
-| `v2` | 大规模分片处理 | 6 |
+| 参数 | 默认值 | 说明 |
+|------|-------|------|
+| `--seed-data` | data/seed_cases | 种子文件或按科室分文件的目录 |
+| `--output` | output/synthesis/cases.jsonl | 通过样本（扁平 MedicalCase JSONL） |
+| `--checkpoint` | `<output>.ckpt.jsonl` | 断点文件，默认按 seed_id 续跑 |
+| `--mode` | quality | `fast` 2 次调用 / `quality` 4 次调用 |
+| `--start-idx` / `--end-idx` | 0 / None | 种子切片 |
+| `--shard-size` | 500 | 每片样本数，按科室轮询保证分布均衡 |
+| `--shard-interval` | 0 | 片间暂停秒数，用于规避限流 |
+| `--workers` | 4 | 并发样本数 |
+| `--generator` / `--reviewer` / `--rewriter` | 见文档 | `model@base_url[@api_key_env]` |
+| `--judge` | baichuan-m2@localhost:8200 | 可重复；默认全部裁判通过才算通过 |
+| `--min-passing` | 裁判数 | 最低通过票数 |
+| `--dry-run` | False | 离线模式，不调用 API，仅验证管线与校验 |
+
+**入库校验**（`validate_case`）：主诉长度、主观/客观条数、keywords 非空且不重复、content 长度、
+diagnosis/treatment 非空、主诉不得泄露诊断名。
+
+**说明**: 设计文档中的 `data_pipeline_v2.py`（分片 + 2 小时间隔）、`data_pipeline_oneshot.py`、
+`mimic_pipeline.py` 目前未包含在本仓库；对应的分片、断点与间隔能力已并入 `data_pipeline.py`。
 
 ### 6. RAG CLI 工具 (`rag.py`)
 
@@ -228,6 +264,45 @@ bash scripts/train_multi_gpu.sh \
     --nproc-per-node 4 \
     --max-steps 500
 ```
+
+### 8. 演示 CLI (`cli.py`)
+
+```bash
+python scripts/cli.py version
+python scripts/cli.py cases
+python scripts/cli.py run --case-id mock-mi-001 --skill 0.9
+python scripts/cli.py batch --n 6
+python scripts/cli.py serve --port 8000      # WebUI + 会话 API
+python scripts/cli.py build-swift-data --mode gym
+```
+
+`serve` 同时提供 OpenEnv 风格接口：
+
+| 接口 | 说明 |
+|------|------|
+| `GET /api/cases` | 病例列表 |
+| `POST /api/run` | 跑完一个 episode（演示用） |
+| `POST /api/reset` | 创建会话，返回 observation / system_message |
+| `POST /api/step` | 在会话上执行一个动作，返回 reward / done / info |
+
+### 9. ms-swift GRPO 训练 (`swift_plugin.py` / `train_swift.sh`)
+
+```bash
+# 1) 构造 gym 模式数据集（每行一个 env_config）
+python scripts/build_swift_dataset.py --mode gym --output assets/mock/swift_gym.jsonl
+
+# 2) 训练
+bash scripts/train_swift.sh
+# 只使用环境总奖励
+PROFILE=env-only bash scripts/train_swift.sh
+```
+
+插件注册内容：
+
+- `envs["medagent"] = MedAgentSwiftEnv`：包装 `src/medagent/env.py`
+- `orms["med_diagnosis" | "med_treatment" | "med_safety" | "med_efficiency" | "med_cost"]`
+
+默认 hybrid 权重：`0.4 / 0.3 / 0.2 / 0.2 / 0.1 + 1.0`（末位为 gym `total_reward`）。
 
 ## 环境变量配置
 

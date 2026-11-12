@@ -15,6 +15,10 @@ data/
 *.jsonl
 *.json
 
+# 演示用的小样本必须进版本库
+!assets/mock/*.json
+!assets/mock/*.jsonl
+
 # -----------------------------------------------------------------------------
 # Project Documents (not for repo)
 # -----------------------------------------------------------------------------
@@ -119,7 +123,6 @@ chroma*/
 # Early Experimental Scripts (not for repo)
 # -----------------------------------------------------------------------------
 scripts/pipeline_comparison.py
-scripts/data_pipeline*.py
 scripts/dual_model_judge.py
 scripts/mimic_pipeline.py
 scripts/test_*.py

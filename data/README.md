@@ -112,26 +112,42 @@ data/
 
 ## 数据合成管线
 
-从种子数据生成高质量医疗病例的管线 (`src/medagent/data_pipeline.py`):
+从种子数据生成高质量医疗病例的管线：
 
-### 标准管线 (4 阶段)
-1. **Generate**: LLM 从种子数据生成医疗病例
-2. **Review**: 异构模型审查病例质量
-3. **Rewrite**: LLM 根据审查反馈修改病例
-4. **Judge**: 医疗专科模型 (Baichuan-M3, 235B MoE) 验证病例
+- 核心实现：`src/medagent/data_pipeline.py`（`CaseSynthesizer` / `PipelineConfig` / `run_pipeline`）
+- 命令行入口：`scripts/data_pipeline.py`
 
-**生成数据**: 6,951+ 条（通过率 99.3%）
+### 两种模式
 
-### 其他管线
-- **大规模管线 (v2)**: 分片处理 + 断点续跑 + 标签均衡采样
-- **One-shot 管线**: 单次 LLM 调用（成本降低 50%+）
-- **MIMIC-IV 管线**: 从真实出院记录提取
+| 模式 | 流程 | 调用次数/样本 |
+|------|------|--------------|
+| `quality` | Generate → Review → Rewrite → Judge | 4（Judge 可多模型投票） |
+| `fast` | Generate → Judge | 2 |
+
+### 管线能力
+
+- **标签均衡分片**：按科室轮询切片（`--shard-size`），每个 shard 科室分布均匀
+- **断点续跑**：`<output>.ckpt.jsonl` 逐条落盘，按 `seed_id` 跳过已通过样本
+- **限流保护**：`--shard-interval` 设置片间暂停，配合 `LLMClient` 的调用计数
+- **入库校验**：主诉不泄露诊断、keywords 非空不重复、diagnosis/treatment 非空、字段条数范围
+- **多裁判投票**：`--judge` 可重复，默认全部裁判通过才算通过（传 3 个即 3/3）
+
+### 输出
+
+通过样本写入扁平 `MedicalCase` JSONL（与 `data/datasets/*.jsonl` 同构），并附带
+`synth_meta`（管线版本、模式、生成模型、裁判列表、seed_id）。
+
+### 说明
+
+设计文档中提到的 `data_pipeline_v2.py`、`data_pipeline_oneshot.py`、`mimic_pipeline.py`
+目前未包含在本仓库；分片、断点与间隔能力已并入 `scripts/data_pipeline.py`。
 
 ## 相关脚本
 
 | 脚本 | 说明 |
 |------|------|
-| `src/medagent/data_pipeline.py` | 数据合成管线 |
+| `src/medagent/data_pipeline.py` | 数据合成核心实现 |
+| `scripts/data_pipeline.py` | 数据合成 CLI |
 | `scripts/build_knowledge_base.sh` | 旧知识库构建脚本 (已废弃) |
 | `scripts/rag.py` | 独立 RAG CLI 工具 |
 

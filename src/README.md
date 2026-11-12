@@ -10,12 +10,19 @@
 src/
 ├── medagent/                    # 核心模块
 │   ├── __init__.py              # 模块导出
+│   ├── version.py               # 包版本号
 │   ├── agent.py                 # MedAgent 智能体 (ReAct 循环)
 │   ├── tool.py                  # 工具系统 (ASK, EXAM, KNOWLEDGE)
 │   ├── knowledge_tool_v2.py     # 关键词匹配知识工具
 │   ├── knowledge_base.py        # 旧 RAG 知识库 (保留用于 rag.py)
 │   ├── judger.py                # 评测器 (三维度评分)
 │   ├── cost.py                  # 成本评估器
+│   ├── data_pipeline.py         # 数据合成管线 (Generate/Review/Rewrite/Judge)
+│   ├── env.py                   # OpenEnv 风格环境 (reset/step/close)
+│   ├── rewards.py               # 诊断/治疗/安全/效率/cost 奖励
+│   ├── swift_rewards.py         # ms-swift ORM 封装
+│   ├── demo_agent.py            # 离线脚本化医生
+│   ├── webui.py                 # WebUI + 会话 API
 │   ├── llm.py                   # LLM 客户端
 │   ├── embedding.py             # Embedding 客户端 (旧)
 │   └── reranker.py              # Reranker 客户端 (旧)
@@ -299,6 +306,11 @@ agent.py
   │   └── llm.py
   ├── cost.py
   │   └── llm.py
+  └── schema.py
+
+data_pipeline.py
+  ├── llm.py
+  ├── version.py
   └── schema.py
 
 llm.py (独立模块)
