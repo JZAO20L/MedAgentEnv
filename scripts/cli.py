@@ -93,6 +93,53 @@ def cmd_batch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sweep(args: argparse.Namespace) -> int:
+    """按医生水平扫一遍全部病例，输出可直接投屏/贴进幻灯片的表格"""
+    from src.medagent.demo_agent import skill_tier
+
+    catalog = CaseCatalog()
+    cases = catalog.list()[: args.n]
+    skills = [float(item) for item in str(args.skills).split(",") if item.strip()]
+    if not cases or not skills:
+        print("没有病例或水平取值", file=sys.stderr)
+        return 1
+
+    rows = []
+    for skill in skills:
+        results = []
+        for item in cases:
+            env = MedAgentEnv(env_config={"case_id": item["case_id"], "max_steps": args.max_steps})
+            results.append(asyncio.run(run_episode(env, skill=skill, max_turns=args.max_steps)))
+        rows.append((skill, results))
+
+    if args.detail:
+        for skill, results in rows:
+            print(f"\n### skill={skill:.2f}（{skill_tier(skill)}）\n")
+            print(f"| 病例 | 科室 | 轮次 | 成本(元) | 诊断 | 治疗 | 安全 | 效率 | 总分 |")
+            print("|---|---|---|---|---|---|---|---|---|")
+            for result in results:
+                parts = result["breakdown"]
+                print(
+                    f"| {result['case']['case_id']} | {result['case']['department']} | {result['turns']} | "
+                    f"{result['cost']:.0f} | {parts.get('diagnosis', 0):.2f} | {parts.get('treatment', 0):.2f} | "
+                    f"{parts.get('safety', 0):.2f} | {parts.get('efficiency', 0):.2f} | {result['score']:.2f} |"
+                )
+
+    print("\n### 按医生水平汇总\n")
+    print("| skill | 档位 | 平均总分 | 平均成本(元) | 平均轮次 | 诊断命中 | 治疗覆盖 |")
+    print("|---|---|---|---|---|---|---|")
+    for skill, results in rows:
+        count = len(results)
+        avg_score = sum(item["score"] for item in results) / count
+        avg_cost = sum(item["cost"] for item in results) / count
+        avg_turns = sum(item["turns"] for item in results) / count
+        avg_diag = sum(item["breakdown"].get("diagnosis", 0) for item in results) / count
+        avg_treat = sum(item["breakdown"].get("treatment", 0) for item in results) / count
+        print(f"| {skill:.2f} | {skill_tier(skill)} | {avg_score:.3f} | {avg_cost:.0f} | "
+              f"{avg_turns:.1f} | {avg_diag:.2f} | {avg_treat:.2f} |")
+    return 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     from src.medagent.webui import serve
 
@@ -137,6 +184,13 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--skill", type=float, default=0.9)
     batch.add_argument("--max-steps", type=int, default=16)
     batch.set_defaults(func=cmd_batch)
+
+    sweep = sub.add_parser("sweep", help="按医生水平扫全部病例，输出对比表")
+    sweep.add_argument("--skills", default="0.9,0.6,0.2", help="逗号分隔的水平取值")
+    sweep.add_argument("--n", type=int, default=6)
+    sweep.add_argument("--max-steps", type=int, default=16)
+    sweep.add_argument("--detail", action="store_true", help="附带每个病例的明细表")
+    sweep.set_defaults(func=cmd_sweep)
 
     serve_cmd = sub.add_parser("serve", help="启动 WebUI + 会话 API")
     serve_cmd.add_argument("--host", default="127.0.0.1")
