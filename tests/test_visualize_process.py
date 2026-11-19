@@ -56,6 +56,9 @@ def test_html_is_self_contained(data):
     assert "<svg" in page
     assert 'src="http' not in page and 'href="http' not in page
     assert len(page) > 8_000
+    # 成本口径纠错：逐轮数值是奖励 shaping 代理，非真实费用；真实费用只对完整轨迹计价、信息披露免费
+    assert "奖励成本代理" in page
+    assert "完整 agent 轨迹" in page and "不计真实费用" in page
 
 
 def test_cli_writes_file(tmp_path):

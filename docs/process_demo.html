@@ -73,17 +73,17 @@ code{font-family:var(--mono);font-size:12px;background:var(--panel);border-radiu
 </header>
 
 <h2>① Agent loop：主诉 → 获取信息 → 结论</h2>
-<svg viewBox="0 0 640 110" role="img" aria-label="累计成本曲线"><line x1="40" y1="86" x2="610" y2="86" stroke="#dfe5ea"/><text x="40" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">累计成本（元，满刻度 150）</text><polyline points="40.0,77.2 216.7,33.2 393.3,31.0 570.0,31.0" fill="none" stroke="#b45309" stroke-width="2"/><circle cx="40.0" cy="77.2" r="3.5" fill="#b45309"/><text x="40.0" y="69.2" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">20</text><circle cx="216.7" cy="33.2" r="3.5" fill="#b45309"/><text x="216.7" y="25.2" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">120</text><circle cx="393.3" cy="31.0" r="3.5" fill="#b45309"/><text x="393.3" y="23.0" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">125</text><circle cx="570.0" cy="31.0" r="3.5" fill="#b45309"/><text x="570.0" y="23.0" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">125</text><text x="40.0" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T1</text><text x="216.7" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T2</text><text x="393.3" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T3</text><text x="570.0" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T4</text></svg>
-<div class="turn"><div class="turn-head"><span class="badge" style="background:#0f766e">T1 · 问诊 ASK</span><span class="reward pos">+0.180</span><span class="cum">累计 20 元</span></div><div class="kw"><span>疼痛性质</span><span>持续时间</span></div><div class="formula">奖励 = 新颖度 0.20 − 成本 20×0.001</div><div class="obs">【问诊结果】
+<svg viewBox="0 0 640 110" role="img" aria-label="奖励成本代理曲线"><line x1="40" y1="86" x2="610" y2="86" stroke="#dfe5ea"/><text x="40" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">奖励成本代理（shaping，非真实费用，满刻度 150）</text><polyline points="40.0,77.2 216.7,33.2 393.3,31.0 570.0,31.0" fill="none" stroke="#b45309" stroke-width="2"/><circle cx="40.0" cy="77.2" r="3.5" fill="#b45309"/><text x="40.0" y="69.2" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">20</text><circle cx="216.7" cy="33.2" r="3.5" fill="#b45309"/><text x="216.7" y="25.2" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">120</text><circle cx="393.3" cy="31.0" r="3.5" fill="#b45309"/><text x="393.3" y="23.0" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">125</text><circle cx="570.0" cy="31.0" r="3.5" fill="#b45309"/><text x="570.0" y="23.0" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">125</text><text x="40.0" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T1</text><text x="216.7" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T2</text><text x="393.3" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T3</text><text x="570.0" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T4</text></svg>
+<div class="turn"><div class="turn-head"><span class="badge" style="background:#0f766e">T1 · 问诊 ASK</span><span class="reward pos">+0.180</span><span class="cum">成本代理累计 20</span></div><div class="kw"><span>疼痛性质</span><span>持续时间</span></div><div class="formula">奖励 = 新颖度 0.20 − 成本代理 20×0.001</div><div class="obs">【问诊结果】
 - 压榨样疼痛，位于胸骨后，向左肩放射。
-- 疼痛持续约2小时，休息后不缓解。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#b45309">T2 · 检查 EXAM</span><span class="reward pos">+0.100</span><span class="cum">累计 120 元</span></div><div class="kw"><span>心电图</span><span>心肌酶</span></div><div class="formula">奖励 = 新颖度 0.20 − 成本 100×0.001</div><div class="obs">【检查结果】
+- 疼痛持续约2小时，休息后不缓解。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#b45309">T2 · 检查 EXAM</span><span class="reward pos">+0.100</span><span class="cum">成本代理累计 120</span></div><div class="kw"><span>心电图</span><span>心肌酶</span></div><div class="formula">奖励 = 新颖度 0.20 − 成本代理 100×0.001</div><div class="obs">【检查结果】
 - V1-V4导联ST段抬高0.3mV。
-- 肌钙蛋白T 2.5ng/mL，显著升高。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#4a6fa5">T3 · 查知识 KNOWLEDGE</span><span class="reward pos">+0.045</span><span class="cum">累计 125 元</span></div><div class="kw"><span>心肌梗死</span><span>再灌注</span></div><div class="formula">奖励 = 命中 +0.05 − 成本 5×0.001</div><div class="obs">【知识库】
+- 肌钙蛋白T 2.5ng/mL，显著升高。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#4a6fa5">T3 · 查知识 KNOWLEDGE</span><span class="reward pos">+0.045</span><span class="cum">成本代理累计 125</span></div><div class="kw"><span>心肌梗死</span><span>再灌注</span></div><div class="formula">奖励 = 命中 +0.05 − 成本代理 5×0.001</div><div class="obs">【知识库】
 1. 急性心肌梗死的诊断标准是什么？
 典型缺血性胸痛持续超过20分钟；心电图出现ST段抬高或新发Q波；心肌损伤标志物（肌钙蛋白）升高。三者符合即可诊断，需尽快再灌注治疗。
 
 2. 急性心肌梗死的治疗原则
-尽早再灌注（急诊PCI或溶栓），双联抗血小板、抗凝、他汀，镇痛与吸氧对症；密切监测心律与血流动力学。</div><div class="tmeta">知识库命中 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#182430">T4 · 结论 FINAL</span><span class="reward pos">+0.875</span><span class="cum">累计 125 元</span></div><div class="formula">奖励 = 得分 1.00 − 累计成本 125×0.001（裁剪 [-1,1]）</div><div class="obs">【问诊结束】诊断：急性前壁心肌梗死
+尽早再灌注（急诊PCI或溶栓），双联抗血小板、抗凝、他汀，镇痛与吸氧对症；密切监测心律与血流动力学。</div><div class="tmeta">知识库命中 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#182430">T4 · 结论 FINAL</span><span class="reward pos">+0.875</span><span class="cum">成本代理累计 125</span></div><div class="formula">奖励 = 得分 1.00 − 累计成本代理 125×0.001（裁剪 [-1,1]）</div><div class="obs">【问诊结束】诊断：急性前壁心肌梗死
 处置：急诊PCI；双联抗血小板治疗；抗凝治疗
 本题得分：1.00</div><div class="tmeta">episode 结束</div></div>
 
@@ -91,8 +91,9 @@ code{font-family:var(--mono);font-size:12px;background:var(--panel);border-radiu
 <div class="grid g2">
   <div class="card">
     <h3 style="margin:0 0 8px;font-size:15px">奖励怎么算（纯函数，零 API）</h3>
-    <p class="small" style="margin:0 0 6px"><b>逐轮</b>：信息新颖度（每条新信息 +0.1，上限 0.3）− 动作成本×0.001；重复问同一件事不给新信息再 −0.05。</p>
-    <p class="small" style="margin:0 0 6px"><b>终止</b>：综合得分（0.5×诊断 + 0.3×治疗 + 0.2×安全）− 累计成本×0.001。</p>
+    <p class="small" style="margin:0 0 6px"><b>逐轮</b>：信息新颖度（每条新信息 +0.1，上限 0.3）− 动作成本代理×0.001；重复问同一件事不给新信息再 −0.05。</p>
+    <p class="small" style="margin:0 0 6px"><b>终止</b>：综合得分（0.5×诊断 + 0.3×治疗 + 0.2×安全）− 累计成本代理×0.001。</p>
+    <p class="small muted" style="margin:0 0 6px">这里"成本"是奖励 shaping 代理（纯函数、非真实费用）；信息披露（ASK/查知识）本身不计真实费用。</p>
     <p class="small muted" style="margin:0">单轮与终止奖励均裁剪到 [-1, 1]，避免早期探索被成本压死；效率分要求至少各一次问诊与检查。</p>
   </div>
   <div class="card">
@@ -100,7 +101,7 @@ code{font-family:var(--mono);font-size:12px;background:var(--panel);border-radiu
     <div class="brow"><span>诊断</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>治疗</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>安全</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>效率</span><div class="track"><div class="fill" style="width:80%"></div></div><b>0.80</b></div>
     <div class="tiles">
       <div class="tile"><div class="n" style="color:var(--accent)">1.00</div><div class="t">综合得分</div></div>
-      <div class="tile"><div class="n" style="color:var(--amber)">125</div><div class="t">累计成本（元）</div></div>
+      <div class="tile"><div class="n" style="color:var(--amber)">125</div><div class="t">奖励成本代理</div></div>
       <div class="tile"><div class="n">1.20</div><div class="t">累计奖励</div></div>
       <div class="tile"><div class="n">4</div><div class="t">轮次</div></div>
     </div>
@@ -116,8 +117,9 @@ code{font-family:var(--mono);font-size:12px;background:var(--panel);border-radiu
 </div>
 
 <div class="note">
-  <p>数据与口径：病例来自 <code>assets/mock/</code>，医生为离线剧本策略（不调用 API）；
-  成本为代理定价（问诊 10 元 / 检查 50 元 / 查知识 5 元），只用于相对比较。
+  <p>数据与口径：病例来自 <code>assets/mock/</code>，医生为离线剧本策略（不调用 API）。
+  本页逐轮"成本"是<b>奖励 shaping 代理</b>（问诊 10 / 检查 50 / 查知识 5，按关键词数计，纯函数、非真实费用），只用于奖励相对比较。
+  <b>真实诊疗费用</b>在评测侧对<b>完整 agent 轨迹</b>估算：医疗模型提取 EXAM 医疗服务与 FINAL 药品，按价格参考清单匹配、未命中由医疗模型兜底定价并回写（<code>cost.py</code>）；信息披露（ASK/查知识）不计真实费用。
   本页得分是环境纯函数规则分（0–1），与论文基准的 LLM 判分（1–5）不同量纲，不可混比。</p>
   <p>轨迹与反馈计算由 <code>tests/test_visualize_process.py</code> 锁定。
   重新生成：<code>python scripts/visualize_process.py --case-id mock-mi-001 --skill 0.9</code></p>

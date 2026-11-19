@@ -6,8 +6,8 @@
 
 页面内容（环境的核心机制，不做水平分档对比）：
 - ① agent loop：主诉 → ASK / EXAM / KNOWLEDGE → FINAL 的逐轮轨迹，
-  每轮标注动作、关键词、披露信息、奖励拆解（新颖度 − 成本）与累计成本曲线
-- ② 多维反馈：逐轮 / 终止奖励公式 + 诊断 / 治疗 / 安全 / 效率四维拆解 + 成本与轮次
+  每轮标注动作、关键词、披露信息、奖励拆解（新颖度 − 成本代理）与奖励成本代理曲线
+- ② 多维反馈：逐轮 / 终止奖励公式 + 诊断 / 治疗 / 安全 / 效率四维拆解 + 成本代理与轮次
 - ③ 结论对照：agent 诊断 / 处置 vs 标准答案与禁忌清单
 
 不调用任何 API，数据来自 assets/mock/；同一输入生成的页面内容确定，可入库。
@@ -101,14 +101,14 @@ def _reward_note(action: str, turn: Dict[str, Any], prev_cost: float,
     delta = turn["cost"] - prev_cost
     if action in ("ASK", "EXAM"):
         novelty = min(0.3, 0.1 * (turn["new_items"] or 0))
-        note = f"新颖度 {novelty:.2f} − 成本 {delta:.0f}×{COST_SCALE}"
+        note = f"新颖度 {novelty:.2f} − 成本代理 {delta:.0f}×{COST_SCALE}"
         if not turn["new_items"]:
             note += " − 重复 0.05"
         return note
     if action == "KNOWLEDGE":
         base = 0.05 if turn["hits"] else -0.05
-        return f"命中 {base:+.2f} − 成本 {delta:.0f}×{COST_SCALE}"
-    return f"得分 {score:.2f} − 累计成本 {total_cost:.0f}×{COST_SCALE}（裁剪 [-1,1]）"
+        return f"命中 {base:+.2f} − 成本代理 {delta:.0f}×{COST_SCALE}"
+    return f"得分 {score:.2f} − 累计成本代理 {total_cost:.0f}×{COST_SCALE}（裁剪 [-1,1]）"
 
 
 async def _trace(case_id: str, skill: float, max_steps: int) -> Dict[str, Any]:
@@ -193,10 +193,10 @@ def _cost_svg(trace: Dict[str, Any], color: str = "#b45309") -> str:
         f'text-anchor="middle" font-family="Consolas,monospace">T{turn["turn"]}</text>'
         for x, turn in zip(xs, turns))
     return (
-        f'<svg viewBox="0 0 {width} {height}" role="img" aria-label="累计成本曲线">'
+        f'<svg viewBox="0 0 {width} {height}" role="img" aria-label="奖励成本代理曲线">'
         f'<line x1="40" y1="{height - 24}" x2="{width - 30}" y2="{height - 24}" stroke="#dfe5ea"/>'
         f'<text x="40" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">'
-        f'累计成本（元，满刻度 {ymax:.0f}）</text>'
+        f'奖励成本代理（shaping，非真实费用，满刻度 {ymax:.0f}）</text>'
         f'<polyline points="{points}" fill="none" stroke="{color}" stroke-width="2"/>'
         f'{dots}{labels}</svg>'
     )
@@ -221,7 +221,7 @@ def _turn_html(turn: Dict[str, Any]) -> str:
         f'<div class="turn-head"><span class="badge" style="background:{color}">'
         f'T{turn["turn"]} · {label} {html.escape(action)}</span>'
         f'<span class="reward {reward_cls}">{reward:+.3f}</span>'
-        f'<span class="cum">累计 {turn["cost"]:.0f} 元</span></div>'
+        f'<span class="cum">成本代理累计 {turn["cost"]:.0f}</span></div>'
         f'{keyword_block}'
         f'<div class="formula">奖励 = {html.escape(turn["reward_note"])}</div>'
         f'<div class="obs">{html.escape(turn["observation"])}</div>'
@@ -286,8 +286,9 @@ def render_html(data: Dict[str, Any]) -> str:
 <div class="grid g2">
   <div class="card">
     <h3 style="margin:0 0 8px;font-size:15px">奖励怎么算（纯函数，零 API）</h3>
-    <p class="small" style="margin:0 0 6px"><b>逐轮</b>：信息新颖度（每条新信息 +0.1，上限 0.3）− 动作成本×{COST_SCALE}；重复问同一件事不给新信息再 −0.05。</p>
-    <p class="small" style="margin:0 0 6px"><b>终止</b>：综合得分（0.5×诊断 + 0.3×治疗 + 0.2×安全）− 累计成本×{COST_SCALE}。</p>
+    <p class="small" style="margin:0 0 6px"><b>逐轮</b>：信息新颖度（每条新信息 +0.1，上限 0.3）− 动作成本代理×{COST_SCALE}；重复问同一件事不给新信息再 −0.05。</p>
+    <p class="small" style="margin:0 0 6px"><b>终止</b>：综合得分（0.5×诊断 + 0.3×治疗 + 0.2×安全）− 累计成本代理×{COST_SCALE}。</p>
+    <p class="small muted" style="margin:0 0 6px">这里"成本"是奖励 shaping 代理（纯函数、非真实费用）；信息披露（ASK/查知识）本身不计真实费用。</p>
     <p class="small muted" style="margin:0">单轮与终止奖励均裁剪到 [-1, 1]，避免早期探索被成本压死；效率分要求至少各一次问诊与检查。</p>
   </div>
   <div class="card">
@@ -295,7 +296,7 @@ def render_html(data: Dict[str, Any]) -> str:
     {_bars_html(trace['breakdown'])}
     <div class="tiles">
       <div class="tile"><div class="n" style="color:var(--accent)">{trace['score']:.2f}</div><div class="t">综合得分</div></div>
-      <div class="tile"><div class="n" style="color:var(--amber)">{trace['cost']:.0f}</div><div class="t">累计成本（元）</div></div>
+      <div class="tile"><div class="n" style="color:var(--amber)">{trace['cost']:.0f}</div><div class="t">奖励成本代理</div></div>
       <div class="tile"><div class="n">{trace['total_reward']:.2f}</div><div class="t">累计奖励</div></div>
       <div class="tile"><div class="n">{len(trace['turns'])}</div><div class="t">轮次</div></div>
     </div>
@@ -311,8 +312,9 @@ def render_html(data: Dict[str, Any]) -> str:
 </div>
 
 <div class="note">
-  <p>数据与口径：病例来自 <code>assets/mock/</code>，医生为离线剧本策略（不调用 API）；
-  成本为代理定价（问诊 {ACTION_COST['ASK']} 元 / 检查 {ACTION_COST['EXAM']} 元 / 查知识 {ACTION_COST['KNOWLEDGE']} 元），只用于相对比较。
+  <p>数据与口径：病例来自 <code>assets/mock/</code>，医生为离线剧本策略（不调用 API）。
+  本页逐轮"成本"是<b>奖励 shaping 代理</b>（问诊 {ACTION_COST['ASK']} / 检查 {ACTION_COST['EXAM']} / 查知识 {ACTION_COST['KNOWLEDGE']}，按关键词数计，纯函数、非真实费用），只用于奖励相对比较。
+  <b>真实诊疗费用</b>在评测侧对<b>完整 agent 轨迹</b>估算：医疗模型提取 EXAM 医疗服务与 FINAL 药品，按价格参考清单匹配、未命中由医疗模型兜底定价并回写（<code>cost.py</code>）；信息披露（ASK/查知识）不计真实费用。
   本页得分是环境纯函数规则分（0–1），与论文基准的 LLM 判分（1–5）不同量纲，不可混比。</p>
   <p>轨迹与反馈计算由 <code>tests/test_visualize_process.py</code> 锁定。
   重新生成：<code>{html.escape(data['command'])}</code></p>
