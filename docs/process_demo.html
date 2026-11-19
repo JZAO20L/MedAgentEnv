@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MedAgentEnv · 问诊过程可视化（mock-mi-001）</title>
+<title>MedAgentEnv · agent loop 与多维反馈（mock-mi-001）</title>
 <style>
 :root{--ink:#182430;--muted:#68757f;--line:#dfe5ea;--panel:#f5f7f8;
 --accent:#0f766e;--accent-soft:#e2f0ee;--amber:#b45309;--amber-soft:#fbf0e0;
@@ -12,28 +12,25 @@
 body{margin:0;background:#fff;color:var(--ink);
 font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
 font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
-main{max-width:1180px;margin:0 auto;padding:32px 24px 60px}
+main{max-width:1080px;margin:0 auto;padding:32px 24px 60px}
 header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:24px}
 .tag{display:inline-block;font-size:12px;letter-spacing:.1em;color:var(--accent);
 background:var(--accent-soft);border-radius:999px;padding:4px 12px;margin-bottom:12px}
-h1{font-size:30px;line-height:1.3;margin:0 0 8px}
-h2{font-size:20px;margin:32px 0 14px}
+h1{font-size:28px;line-height:1.3;margin:0 0 8px}
+h2{font-size:19px;margin:30px 0 14px}
 .muted{color:var(--muted)} .small{font-size:12.5px}
 .case-meta{display:flex;gap:22px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);margin-top:8px}
 .case-meta b{color:var(--ink)}
 .grid{display:grid;gap:14px}
-.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
-.card .big{font-family:var(--mono);font-size:28px;font-weight:700;line-height:1.15}
+.card .big{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1.15}
 .card .cap{font-size:12.5px;color:var(--muted);margin-top:4px}
-.col{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff}
-.col-head{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);
-padding-bottom:10px;margin-bottom:12px}
-.col-head .tier{font-size:17px;font-weight:700}
-.col-head .skill{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.col-head .score{margin-left:auto;font-family:var(--mono);font-size:24px;font-weight:700}
-.col-sub{font-size:12.5px;color:var(--muted);margin-bottom:10px}
-svg{width:100%;height:auto;display:block;margin-bottom:12px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.tile{background:var(--panel);border-radius:10px;padding:10px 12px}
+.tile .n{font-family:var(--mono);font-size:20px;font-weight:700}
+.tile .t{font-size:11.5px;color:var(--muted)}
+svg{width:100%;height:auto;display:block;margin:6px 0 14px}
 .turn{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fff}
 .turn-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:11.5px;font-weight:700;color:#fff;border-radius:6px;padding:2px 8px;white-space:nowrap}
@@ -43,6 +40,7 @@ svg{width:100%;height:auto;display:block;margin-bottom:12px}
 .kw{margin-top:6px}
 .kw span{display:inline-block;font-size:11.5px;background:var(--panel);border:1px solid var(--line);
 border-radius:999px;padding:1px 9px;margin:2px 4px 2px 0;color:#3d4b57}
+.formula{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:5px}
 .obs{font-size:12.5px;color:#3d4b57;margin-top:6px;white-space:pre-line}
 .tmeta{font-size:11.5px;color:var(--muted);margin-top:5px}
 .brow{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px}
@@ -50,72 +48,79 @@ border-radius:999px;padding:1px 9px;margin:2px 4px 2px 0;color:#3d4b57}
 .brow b{font-family:var(--mono);font-size:12px;flex:0 0 38px;text-align:right}
 .track{flex:1;height:8px;background:#e9edf1;border-radius:999px;overflow:hidden}
 .fill{height:100%;background:var(--accent);border-radius:999px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#eef1f4;font-size:12px;color:#3d4b57;white-space:nowrap}
+tr:last-child td{border-bottom:none}
 .note{font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:12px;margin-top:24px}
 code{font-family:var(--mono);font-size:12px;background:var(--panel);border-radius:4px;padding:1px 5px}
-@media (max-width:900px){.g3{grid-template-columns:1fr}}
-@media print{body{font-size:11pt}.col,.card{break-inside:avoid}main{padding:0}}
+@media (max-width:860px){.g2{grid-template-columns:1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
+@media print{body{font-size:11pt}.col,.card,.turn{break-inside:avoid}main{padding:0}}
 </style>
 </head>
 <body>
 <main>
 <header>
   <span class="tag">MedAgentEnv · 离线过程可视化 · mock 数据</span>
-  <h1>一条问诊轨迹是怎么被打分和计价的</h1>
+  <h1>一条完整 agent loop，和它拿到的多维反馈</h1>
   <div class="case-meta">
     <span>病例 <b>mock-mi-001</b></span>
     <span>科室 <b>内科</b></span>
     <span>难度 <b>medium</b></span>
+    <span>skill <b>0.90</b></span>
     <span>主诉 <b>胸痛2小时，伴大汗，休息后不缓解。</b></span>
   </div>
 </header>
 
-<h2>三档水平 · 全部 6 个 mock 病例平均（与 <code>cli.py sweep</code> 同源）</h2>
-<div class="grid g3"><div class="card"><div class="big" style="color:#0f766e">0.958</div><div class="cap"><b>专家</b>（skill=1.00）平均总分<br>平均成本 125 元 · 平均 4.0 轮</div></div><div class="card"><div class="big" style="color:#4aa39a">0.833</div><div class="cap"><b>主治</b>（skill=0.60）平均总分<br>平均成本 142 元 · 平均 4.0 轮</div></div><div class="card"><div class="big" style="color:#b45309">0.200</div><div class="cap"><b>实习生</b>（skill=0.20）平均总分<br>平均成本 175 元 · 平均 4.0 轮</div></div></div>
-
-<h2>选定病例的逐轮过程（同一病例，三种水平）</h2>
-<div class="grid g3"><div class="col"><div class="col-head"><span class="tier" style="color:#0f766e">专家</span><span class="skill">skill=1.00</span><span class="score" style="color:#0f766e">1.000</span></div><div class="col-sub">4 轮 · 成本 125 元 · 终止原因 final</div><svg viewBox="0 0 320 96" role="img" aria-label="累计成本曲线"><line x1="24" y1="76" x2="304" y2="76" stroke="#dfe5ea"/><text x="24" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">累计成本（元，满刻度 200）</text><polyline points="24.0,70.0 109.3,40.0 194.7,38.5 280.0,38.5" fill="none" stroke="#0f766e" stroke-width="2"/><circle cx="24.0" cy="70.0" r="3" fill="#0f766e"/><circle cx="109.3" cy="40.0" r="3" fill="#0f766e"/><circle cx="194.7" cy="38.5" r="3" fill="#0f766e"/><circle cx="280.0" cy="38.5" r="3" fill="#0f766e"/><text x="280.0" y="42.5" font-size="11" font-weight="bold" fill="#0f766e" font-family="Consolas,monospace">125</text></svg><div class="turn"><div class="turn-head"><span class="badge" style="background:#0f766e">T1 · 问诊 ASK</span><span class="reward pos">+0.180</span><span class="cum">累计 20 元</span></div><div class="kw"><span>疼痛性质</span><span>持续时间</span></div><div class="obs">【问诊结果】
+<h2>① Agent loop：主诉 → 获取信息 → 结论</h2>
+<svg viewBox="0 0 640 110" role="img" aria-label="累计成本曲线"><line x1="40" y1="86" x2="610" y2="86" stroke="#dfe5ea"/><text x="40" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">累计成本（元，满刻度 150）</text><polyline points="40.0,77.2 216.7,33.2 393.3,31.0 570.0,31.0" fill="none" stroke="#b45309" stroke-width="2"/><circle cx="40.0" cy="77.2" r="3.5" fill="#b45309"/><text x="40.0" y="69.2" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">20</text><circle cx="216.7" cy="33.2" r="3.5" fill="#b45309"/><text x="216.7" y="25.2" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">120</text><circle cx="393.3" cy="31.0" r="3.5" fill="#b45309"/><text x="393.3" y="23.0" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">125</text><circle cx="570.0" cy="31.0" r="3.5" fill="#b45309"/><text x="570.0" y="23.0" font-size="10" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">125</text><text x="40.0" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T1</text><text x="216.7" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T2</text><text x="393.3" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T3</text><text x="570.0" y="102" font-size="10" fill="#68757f" text-anchor="middle" font-family="Consolas,monospace">T4</text></svg>
+<div class="turn"><div class="turn-head"><span class="badge" style="background:#0f766e">T1 · 问诊 ASK</span><span class="reward pos">+0.180</span><span class="cum">累计 20 元</span></div><div class="kw"><span>疼痛性质</span><span>持续时间</span></div><div class="formula">奖励 = 新颖度 0.20 − 成本 20×0.001</div><div class="obs">【问诊结果】
 - 压榨样疼痛，位于胸骨后，向左肩放射。
-- 疼痛持续约2小时，休息后不缓解。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#b45309">T2 · 检查 EXAM</span><span class="reward pos">+0.100</span><span class="cum">累计 120 元</span></div><div class="kw"><span>心电图</span><span>心肌酶</span></div><div class="obs">【检查结果】
+- 疼痛持续约2小时，休息后不缓解。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#b45309">T2 · 检查 EXAM</span><span class="reward pos">+0.100</span><span class="cum">累计 120 元</span></div><div class="kw"><span>心电图</span><span>心肌酶</span></div><div class="formula">奖励 = 新颖度 0.20 − 成本 100×0.001</div><div class="obs">【检查结果】
 - V1-V4导联ST段抬高0.3mV。
-- 肌钙蛋白T 2.5ng/mL，显著升高。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#4a6fa5">T3 · 查知识 KNOWLEDGE</span><span class="reward pos">+0.045</span><span class="cum">累计 125 元</span></div><div class="kw"><span>心肌梗死</span><span>再灌注</span></div><div class="obs">【知识库】
+- 肌钙蛋白T 2.5ng/mL，显著升高。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#4a6fa5">T3 · 查知识 KNOWLEDGE</span><span class="reward pos">+0.045</span><span class="cum">累计 125 元</span></div><div class="kw"><span>心肌梗死</span><span>再灌注</span></div><div class="formula">奖励 = 命中 +0.05 − 成本 5×0.001</div><div class="obs">【知识库】
 1. 急性心肌梗死的诊断标准是什么？
 典型缺血性胸痛持续超过20分钟；心电图出现ST段抬高或新发Q波；心肌损伤标志物（肌钙蛋白）升高。三者符合即可诊断，需尽快再灌注治疗。
 
 2. 急性心肌梗死的治疗原则
-尽早再灌注（急诊PCI或溶栓），双联抗血小板、抗凝、他汀，镇痛与吸氧对症；密切监测心律与血流动力学。</div><div class="tmeta">知识库命中 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#182430">T4 · 结论 FINAL</span><span class="reward pos">+0.875</span><span class="cum">累计 125 元</span></div><div class="obs">【问诊结束】诊断：急性前壁心肌梗死
+尽早再灌注（急诊PCI或溶栓），双联抗血小板、抗凝、他汀，镇痛与吸氧对症；密切监测心律与血流动力学。</div><div class="tmeta">知识库命中 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#182430">T4 · 结论 FINAL</span><span class="reward pos">+0.875</span><span class="cum">累计 125 元</span></div><div class="formula">奖励 = 得分 1.00 − 累计成本 125×0.001（裁剪 [-1,1]）</div><div class="obs">【问诊结束】诊断：急性前壁心肌梗死
 处置：急诊PCI；双联抗血小板治疗；抗凝治疗
-本题得分：1.00</div><div class="tmeta">episode 结束</div></div><div class="col-sub" style="margin-top:12px">终止得分拆解</div><div class="brow"><span>诊断</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>治疗</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>安全</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>效率</span><div class="track"><div class="fill" style="width:80%"></div></div><b>0.80</b></div></div><div class="col"><div class="col-head"><span class="tier" style="color:#4aa39a">主治</span><span class="skill">skill=0.60</span><span class="score" style="color:#4aa39a">0.900</span></div><div class="col-sub">4 轮 · 成本 175 元 · 终止原因 final</div><svg viewBox="0 0 320 96" role="img" aria-label="累计成本曲线"><line x1="24" y1="76" x2="304" y2="76" stroke="#dfe5ea"/><text x="24" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">累计成本（元，满刻度 200）</text><polyline points="24.0,70.0 109.3,25.0 194.7,23.5 280.0,23.5" fill="none" stroke="#4aa39a" stroke-width="2"/><circle cx="24.0" cy="70.0" r="3" fill="#4aa39a"/><circle cx="109.3" cy="25.0" r="3" fill="#4aa39a"/><circle cx="194.7" cy="23.5" r="3" fill="#4aa39a"/><circle cx="280.0" cy="23.5" r="3" fill="#4aa39a"/><text x="280.0" y="27.5" font-size="11" font-weight="bold" fill="#4aa39a" font-family="Consolas,monospace">175</text></svg><div class="turn"><div class="turn-head"><span class="badge" style="background:#0f766e">T1 · 问诊 ASK</span><span class="reward pos">+0.180</span><span class="cum">累计 20 元</span></div><div class="kw"><span>疼痛性质</span><span>持续时间</span></div><div class="obs">【问诊结果】
-- 压榨样疼痛，位于胸骨后，向左肩放射。
-- 疼痛持续约2小时，休息后不缓解。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#b45309">T2 · 检查 EXAM</span><span class="reward pos">+0.150</span><span class="cum">累计 170 元</span></div><div class="kw"><span>心电图</span><span>心肌酶</span><span>血常规</span></div><div class="obs">【检查结果】
-- V1-V4导联ST段抬高0.3mV。
-- 肌钙蛋白T 2.5ng/mL，显著升高。
-- 白细胞12.5×10^9/L。</div><div class="tmeta">新信息 3 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#4a6fa5">T3 · 查知识 KNOWLEDGE</span><span class="reward pos">+0.045</span><span class="cum">累计 175 元</span></div><div class="kw"><span>心肌梗死</span><span>再灌注</span></div><div class="obs">【知识库】
-1. 急性心肌梗死的诊断标准是什么？
-典型缺血性胸痛持续超过20分钟；心电图出现ST段抬高或新发Q波；心肌损伤标志物（肌钙蛋白）升高。三者符合即可诊断，需尽快再灌注治疗。
+本题得分：1.00</div><div class="tmeta">episode 结束</div></div>
 
-2. 急性心肌梗死的治疗原则
-尽早再灌注（急诊PCI或溶栓），双联抗血小板、抗凝、他汀，镇痛与吸氧对症；密切监测心律与血流动力学。</div><div class="tmeta">知识库命中 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#182430">T4 · 结论 FINAL</span><span class="reward pos">+0.725</span><span class="cum">累计 175 元</span></div><div class="obs">【问诊结束】诊断：考虑急性前壁心肌梗死可能
-处置：急诊PCI；双联抗血小板治疗
-本题得分：0.90</div><div class="tmeta">episode 结束</div></div><div class="col-sub" style="margin-top:12px">终止得分拆解</div><div class="brow"><span>诊断</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>治疗</span><div class="track"><div class="fill" style="width:67%"></div></div><b>0.67</b></div><div class="brow"><span>安全</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>效率</span><div class="track"><div class="fill" style="width:80%"></div></div><b>0.80</b></div></div><div class="col"><div class="col-head"><span class="tier" style="color:#b45309">实习生</span><span class="skill">skill=0.20</span><span class="score" style="color:#b45309">0.200</span></div><div class="col-sub">4 轮 · 成本 175 元 · 终止原因 final</div><svg viewBox="0 0 320 96" role="img" aria-label="累计成本曲线"><line x1="24" y1="76" x2="304" y2="76" stroke="#dfe5ea"/><text x="24" y="14" font-size="10" fill="#68757f" font-family="Consolas,monospace">累计成本（元，满刻度 200）</text><polyline points="24.0,70.0 109.3,25.0 194.7,23.5 280.0,23.5" fill="none" stroke="#b45309" stroke-width="2"/><circle cx="24.0" cy="70.0" r="3" fill="#b45309"/><circle cx="109.3" cy="25.0" r="3" fill="#b45309"/><circle cx="194.7" cy="23.5" r="3" fill="#b45309"/><circle cx="280.0" cy="23.5" r="3" fill="#b45309"/><text x="280.0" y="27.5" font-size="11" font-weight="bold" fill="#b45309" font-family="Consolas,monospace">175</text></svg><div class="turn"><div class="turn-head"><span class="badge" style="background:#0f766e">T1 · 问诊 ASK</span><span class="reward pos">+0.180</span><span class="cum">累计 20 元</span></div><div class="kw"><span>疼痛性质</span><span>持续时间</span></div><div class="obs">【问诊结果】
-- 压榨样疼痛，位于胸骨后，向左肩放射。
-- 疼痛持续约2小时，休息后不缓解。</div><div class="tmeta">新信息 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#b45309">T2 · 检查 EXAM</span><span class="reward pos">+0.150</span><span class="cum">累计 170 元</span></div><div class="kw"><span>心电图</span><span>心肌酶</span><span>血常规</span></div><div class="obs">【检查结果】
-- V1-V4导联ST段抬高0.3mV。
-- 肌钙蛋白T 2.5ng/mL，显著升高。
-- 白细胞12.5×10^9/L。</div><div class="tmeta">新信息 3 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#4a6fa5">T3 · 查知识 KNOWLEDGE</span><span class="reward pos">+0.045</span><span class="cum">累计 175 元</span></div><div class="kw"><span>心肌梗死</span><span>再灌注</span></div><div class="obs">【知识库】
-1. 急性心肌梗死的诊断标准是什么？
-典型缺血性胸痛持续超过20分钟；心电图出现ST段抬高或新发Q波；心肌损伤标志物（肌钙蛋白）升高。三者符合即可诊断，需尽快再灌注治疗。
+<h2>② 多维反馈：每一轮和终止时各拿到什么</h2>
+<div class="grid g2">
+  <div class="card">
+    <h3 style="margin:0 0 8px;font-size:15px">奖励怎么算（纯函数，零 API）</h3>
+    <p class="small" style="margin:0 0 6px"><b>逐轮</b>：信息新颖度（每条新信息 +0.1，上限 0.3）− 动作成本×0.001；重复问同一件事不给新信息再 −0.05。</p>
+    <p class="small" style="margin:0 0 6px"><b>终止</b>：综合得分（0.5×诊断 + 0.3×治疗 + 0.2×安全）− 累计成本×0.001。</p>
+    <p class="small muted" style="margin:0">单轮与终止奖励均裁剪到 [-1, 1]，避免早期探索被成本压死；效率分要求至少各一次问诊与检查。</p>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 8px;font-size:15px">终止四维拆解（0–1）</h3>
+    <div class="brow"><span>诊断</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>治疗</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>安全</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>效率</span><div class="track"><div class="fill" style="width:80%"></div></div><b>0.80</b></div>
+    <div class="tiles">
+      <div class="tile"><div class="n" style="color:var(--accent)">1.00</div><div class="t">综合得分</div></div>
+      <div class="tile"><div class="n" style="color:var(--amber)">125</div><div class="t">累计成本（元）</div></div>
+      <div class="tile"><div class="n">1.20</div><div class="t">累计奖励</div></div>
+      <div class="tile"><div class="n">4</div><div class="t">轮次</div></div>
+    </div>
+  </div>
+</div>
 
-2. 急性心肌梗死的治疗原则
-尽早再灌注（急诊PCI或溶栓），双联抗血小板、抗凝、他汀，镇痛与吸氧对症；密切监测心律与血流动力学。</div><div class="tmeta">知识库命中 2 条</div></div><div class="turn"><div class="turn-head"><span class="badge" style="background:#182430">T4 · 结论 FINAL</span><span class="reward pos">+0.025</span><span class="cum">累计 175 元</span></div><div class="obs">【问诊结束】诊断：待进一步检查明确
-处置：对症支持治疗，完善检查后决定
-本题得分：0.20</div><div class="tmeta">episode 结束</div></div><div class="col-sub" style="margin-top:12px">终止得分拆解</div><div class="brow"><span>诊断</span><div class="track"><div class="fill" style="width:0%"></div></div><b>0.00</b></div><div class="brow"><span>治疗</span><div class="track"><div class="fill" style="width:0%"></div></div><b>0.00</b></div><div class="brow"><span>安全</span><div class="track"><div class="fill" style="width:100%"></div></div><b>1.00</b></div><div class="brow"><span>效率</span><div class="track"><div class="fill" style="width:80%"></div></div><b>0.80</b></div></div></div>
+<h2>③ 结论对照：打分依据</h2>
+<div class="card" style="padding:0;overflow:hidden">
+  <table>
+    <tr><th style="width:10%">维度</th><th style="width:45%">agent 输出</th><th>标准答案</th></tr>
+    <tr><td>诊断</td><td>急性前壁心肌梗死</td><td>急性前壁心肌梗死</td></tr><tr><td>处置</td><td>急诊PCI；双联抗血小板治疗；抗凝治疗</td><td>急诊PCI；双联抗血小板治疗；抗凝治疗</td></tr><tr><td>禁忌</td><td colspan='2'>处置不得包含：运动负荷试验</td></tr>
+  </table>
+</div>
 
 <div class="note">
   <p>数据与口径：病例来自 <code>assets/mock/</code>，医生为离线剧本策略（不调用 API）；
-  成本为代理定价（问诊 10 元 / 检查 50 元 / 查知识 5 元，1 元 = 0.001 奖励），只用于相对比较；
-  逐轮奖励 = 信息新颖度 − 动作成本，终止奖励 = 得分 − 成本折算，均裁剪到 [-1, 1]。</p>
-  <p>汇总条数字由 <code>tests/test_demo_gradient.py</code> 与 <code>tests/test_visualize_process.py</code> 锁定。
-  重新生成：<code>python scripts/visualize_process.py --case-id mock-mi-001 --skills 1.0,0.6,0.2</code></p>
+  成本为代理定价（问诊 10 元 / 检查 50 元 / 查知识 5 元），只用于相对比较。
+  本页得分是环境纯函数规则分（0–1），与论文基准的 LLM 判分（1–5）不同量纲，不可混比。</p>
+  <p>轨迹与反馈计算由 <code>tests/test_visualize_process.py</code> 锁定。
+  重新生成：<code>python scripts/visualize_process.py --case-id mock-mi-001 --skill 0.9</code></p>
 </div>
 </main>
 </body>
